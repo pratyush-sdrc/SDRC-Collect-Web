@@ -1,0 +1,66 @@
+package org.sdrc.devinfo.domain;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * This Entity will keep mapping of recommended source and recommended unit for a particular indicator. *
+ * @author Ratikanta Pradhan (ratikanta@sdrc.co.in) on 19-Dec-2016 12:02:53 pm
+ */
+
+@Entity
+@Table(name = "mb_indicator_recommendation")
+public class MBIndicatorRecommendation {
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name = "ir_id")
+	private int irId;
+	
+	@Column(name = "Indicator_NId", unique = true, nullable = false)
+	private Integer indicatorNid;
+	
+	@Column(name = "IC_NId")
+	private Integer icNid;
+	
+	@Column(name = "unit_NId")
+	private Integer unitNid;
+
+	public int getIrId() {
+		return irId;
+	}
+
+	public void setIrId(int irId) {
+		this.irId = irId;
+	}
+
+	public Integer getIndicatorNid() {
+		return indicatorNid;
+	}
+
+	public void setIndicatorNid(Integer indicatorNid) {
+		this.indicatorNid = indicatorNid;
+	}
+
+	public Integer getIcNid() {
+		return icNid;
+	}
+
+	public void setIcNid(Integer icNid) {
+		this.icNid = icNid;
+	}
+
+	public Integer getUnitNid() {
+		return unitNid;
+	}
+
+	public void setUnitNid(Integer unitNid) {
+		this.unitNid = unitNid;
+	}
+	
+	
+}

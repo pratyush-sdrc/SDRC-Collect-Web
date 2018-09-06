@@ -1,0 +1,16 @@
+package org.sdrc.devinfo.repository.springdatajpa;
+
+import org.sdrc.devinfo.domain.MBIndicatorRecommendation;
+import org.sdrc.devinfo.repository.MBIndicatorRecommendationRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+/**
+ * 
+ *
+ * @author Ratikanta Pradhan (ratikanta@sdrc.co.in) on 19-Dec-2016 12:13:30 pm
+ */
+public interface DevinfoUtIndicatorRecomandedSourceMappingEnRepository extends
+		MBIndicatorRecommendationRepository,
+		JpaRepository<MBIndicatorRecommendation, Integer> {
+
+}

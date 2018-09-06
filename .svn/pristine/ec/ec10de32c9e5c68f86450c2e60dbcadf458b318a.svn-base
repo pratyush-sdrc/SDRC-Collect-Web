@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<%@page import="org.sdrc.childinfo.model.User"%>
+<%@page import="org.sdrc.childinfo.model.UserRoleSchemeMapping"%>
+<%@page import="java.util.List"%>
+<%@page import="org.sdrc.childinfo.util.Constants"%>
+<%@page import="java.util.ArrayList"%>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<html lang="en">
+
+<jsp:include page="fragments/headTag.jsp" />
+<body>
+	<%
+		User user = null;
+		String role = "";
+		List<String> features = new ArrayList<String>();
+		List<String> permissions = new ArrayList<String>();
+	%>
+	<%
+		user = (User) request.getSession().getAttribute(
+				Constants.USER_PRINCIPAL);
+		List<UserRoleSchemeMapping> ursMappings = new ArrayList<UserRoleSchemeMapping>();
+		ursMappings = user != null ? user.getUserRoleSchemeMappings()
+				: null;
+		if (ursMappings != null && !ursMappings.isEmpty()) {
+			for (UserRoleSchemeMapping ursm : ursMappings) {
+
+				role = ursm.getRoleScheme().getSamikshyaRole()
+						.getRoleName();
+				features.add(ursm.getRoleScheme()
+						.getFeaturePermissionMapping().getFeature()
+						.getFeatureName());
+				permissions.add(ursm.getRoleScheme()
+						.getFeaturePermissionMapping().getPermission()
+						.getPermissionName());
+			}
+		}
+	%>
+	<div id="wrapper">
+		<jsp:include page="fragments/bodyHeader.jsp" />
+
+		<div class="content">
+			<div class="container contain-box">
+			   <div class="row">
+			   <h3>State Factsheet</h3>
+			    <div class="col-md-12">
+			    
+			        <table class="table table-responsive table-striped factsheet">
+		            <thead>
+		              <tr>
+		                <th>Title</th>
+		                <th>Download</th>
+		              </tr>
+		            </thead>
+		            <tbody>
+		              <tr>
+		                <td style="width: 65%;">Assam</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Assam.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		            </tbody>
+		          </table>	     
+			    </div>
+			  </div>
+			   <div class="row">
+			   <h3>District Factsheet</h3>
+			    <div class="col-md-12">
+			    
+			        <table class="table table-responsive table-striped factsheet">
+		            <thead>
+		              <tr>
+		                <th>Title</th>
+		                <th>Download</th>
+		              </tr>
+		            </thead>
+		            <tbody>
+		              <tr>
+		                <td>Baksa</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Baksa.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Barpeta</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Barpeta.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Bongaigaon</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Bongaigaon.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Cachar</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Cachar.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Chirang</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Chirang.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Darrang</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Darrang.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Dhemaji</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Dhemaji.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Dhubri</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Dhubri.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Dibrugarh</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Dibrugarh.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Dima Hasao</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/DimaHasao.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+                      <tr>
+		                <td>Golaghat</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Golaghat.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Goalpara</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Goalpara.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Hailakandi</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Hailakandi.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Jorhat</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Jorhat.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Kamrup Metropolitan</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/KamrupMetropolitan.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+                      <tr>
+		                <td>Kamrup</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Kamrup.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Karimganj</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Karimganj.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Kokrajhar</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Kokrajhar.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+                      <tr>
+		                <td>Lakhimpur</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Lakhimpur.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Morigaon</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Morigaon.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Nagaon</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Nagaon.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Nalbari</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Nalbari.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+                      <tr>
+		                <td>Sivasagar</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Sivasagar.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Sonitpur</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Sonitpur.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr> 
+		              <tr>
+		                <td>Tinsukia</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Tinsukia.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>
+		              <tr>
+		                <td>Udalguri</td>
+		                <td style="padding-left:30px;"><a href="resources/pdfs/Udalguri.pdf" target="_blank"><img src="resources/images/pdf.png" alt="PDF"  height="30" /></a></td>
+		              </tr>         		    
+		            </tbody>
+		          </table>	     
+			    </div>
+			  </div>
+			</div>
+		</div>
+		</div>
+
+		<br><br><br><br>
+	<jsp:include page="fragments/footer.jsp" />
+	<script src="resources/js/welcome.js"
+	type="text/javascript"></script>
+</body>
+
+</html>

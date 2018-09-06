@@ -1,0 +1,109 @@
+package org.sdrc.childinfo.util;
+
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheetProtection;
+import org.springframework.stereotype.Component;
+
+/**
+ * 
+ * @author Subrata
+ *
+ */
+@Component
+public class ChildInfoUtil {
+	
+	/**
+	 * @author Subrata
+	 * @param sheetAt
+	 */
+	public static XSSFSheet sheetLock(XSSFSheet sheet) {
+		
+		sheet.enableLocking();
+		sheet.lockDeleteColumns(true);
+		sheet.lockDeleteRows(true);
+		sheet.lockFormatCells(true);
+		sheet.lockFormatColumns(true);
+		sheet.lockFormatRows(true);
+		sheet.lockInsertColumns(true);
+		sheet.lockInsertRows(true);
+		CTSheetProtection sheetProtection = sheet.getCTWorksheet().getSheetProtection();
+	    sheetProtection.setSelectLockedCells(true); 
+	    sheetProtection.setSelectUnlockedCells(false); 
+	    sheetProtection.setFormatCells(true); 
+	    sheetProtection.setFormatColumns(true); 
+	    sheetProtection.setFormatRows(true); 
+	    sheetProtection.setInsertColumns(true); 
+	    sheetProtection.setInsertRows(true); 
+	    sheetProtection.setInsertHyperlinks(true); 
+	    sheetProtection.setDeleteColumns(true); 
+	    sheetProtection.setDeleteRows(true); 
+	    sheetProtection.setSort(false); 
+	    sheetProtection.setAutoFilter(false); 
+	    sheetProtection.setPivotTables(true); 
+	    sheetProtection.setObjects(true); 
+	    sheetProtection.setScenarios(true);
+		return sheet;
+	}
+
+	/**
+	 * @author Subrata
+	 * @param workbook
+	 */
+
+	public static XSSFCellStyle getStyleForUnLocking(XSSFWorkbook workbook) {
+
+		// Define unlock style for the cells to be unlocked
+		XSSFCellStyle styleForUnLocking = workbook.createCellStyle();
+		styleForUnLocking.setBorderBottom(BorderStyle.THIN);
+//		styleForUnLocking.setBorderTop(XSSFCellStyle.BORDER_THIN);
+//		styleForUnLocking.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+//		styleForUnLocking.setBorderRight(XSSFCellStyle.BORDER_THIN);
+		styleForUnLocking.setLocked(false);
+		styleForUnLocking.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.index);
+//		styleForUnLocking.setAlignment(XSSFCellStyle.ALIGN_CENTER);
+//		styleForUnLocking.setVerticalAlignment(XSSFCellStyle.ALIGN_FILL);
+
+		return styleForUnLocking;
+	}
+
+	/**
+	 * @author Subrata
+	 * @param workbook
+	 */
+	public static XSSFCellStyle getStyleForLocking(XSSFWorkbook workbook) {
+
+		XSSFCellStyle styleForLocking = workbook.createCellStyle();
+		styleForLocking.setBorderBottom(BorderStyle.THIN);
+		styleForLocking.setBorderTop(BorderStyle.THIN);
+		styleForLocking.setBorderLeft(BorderStyle.THIN);
+		styleForLocking.setBorderRight(BorderStyle.THIN);
+		styleForLocking.setLocked(true);
+		styleForLocking.setAlignment(HorizontalAlignment.CENTER);
+		styleForLocking.setVerticalAlignment(VerticalAlignment.CENTER);
+
+		return styleForLocking;
+	}
+
+	/**
+	 * @author Subrata
+	 * @param workbook
+	 */
+	public static XSSFCellStyle getStyleForLeftAlign(XSSFWorkbook workbook) {
+
+		XSSFCellStyle styleForLeftAlign = workbook.createCellStyle();
+		styleForLeftAlign.setAlignment(HorizontalAlignment.LEFT);
+		styleForLeftAlign.setBorderBottom(BorderStyle.THIN);
+		styleForLeftAlign.setBorderTop(BorderStyle.THIN);
+		styleForLeftAlign.setBorderLeft(BorderStyle.THIN);
+		styleForLeftAlign.setBorderRight(BorderStyle.THIN);
+
+		return styleForLeftAlign;
+	}
+
+}

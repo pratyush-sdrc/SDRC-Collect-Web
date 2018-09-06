@@ -1,0 +1,125 @@
+package org.sdrc.childinfo.web;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.sdrc.childinfo.model.DataEntryModel;
+import org.sdrc.childinfo.model.DataModel;
+import org.sdrc.childinfo.model.IUSModel;
+import org.sdrc.childinfo.model.UserDetailsModel;
+import org.sdrc.childinfo.model.ValueObject;
+import org.sdrc.childinfo.service.DataEntryService;
+import org.sdrc.childinfo.util.Constants;
+import org.sdrc.childinfo.util.CustomErrorMessageModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+/**
+ * 
+ * @author subrata,sourav
+ *
+ */
+@Controller
+public class DataEntryController {
+	
+	@Autowired
+	private DataEntryService dataEntryService;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger("LOGGER");
+	
+	private SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	@ResponseBody
+	@RequestMapping(value="/excelFileUpload", method = RequestMethod.POST,consumes= { "multipart/form-data" })
+	public CustomErrorMessageModel excelFileUpload(@RequestPart(value="file") MultipartFile file){
+		try {
+			return dataEntryService.excelFileUpload(file.getBytes());
+		} catch (IOException e) {
+			LOGGER.error("Some error occured.");
+			CustomErrorMessageModel customErrorMessageModel = new CustomErrorMessageModel();
+			customErrorMessageModel.setMessage("Some error occured.");
+			customErrorMessageModel.setStatusCode(500);
+			return customErrorMessageModel;
+			
+		}
+	}
+	
+	@ResponseBody
+	@RequestMapping(value="/getArea", method = RequestMethod.GET)
+	public List<DataModel> getArea(){
+		return dataEntryService.getArea();
+	}
+	
+	@ResponseBody
+	@RequestMapping(value="/getSubsector", method = RequestMethod.GET)
+	public List<ValueObject> getSubsector(){
+		return dataEntryService.getSubsector();
+	}
+	
+	@ResponseBody
+	@RequestMapping(value="/getIUS", method = RequestMethod.GET)
+	public List<IUSModel> getIUS(@RequestParam("id") int id){
+		return dataEntryService.getIUS(id);
+	}
+	
+	@ResponseBody
+	@RequestMapping(value="/getTimePeriod", method = RequestMethod.GET)
+	public List<ValueObject> getTimePeriod(){
+		return dataEntryService.getTimePeriod();
+	}
+	
+	@ResponseBody
+	@RequestMapping(value="/downloadExcelFile", method = RequestMethod.POST)
+	public ValueObject downloadExcelFile(@RequestBody DataEntryModel dataEntryModel){
+		String path =dataEntryService.downloadExcelFile(dataEntryModel);
+		ValueObject object = new ValueObject();
+		object.setKey(path);
+		return object;
+	}
+	@RequestMapping(value = "/downloadSheet", method = RequestMethod.POST)
+	public void downLoad(@RequestParam("fileName") String name, HttpServletResponse response, HttpServletRequest request) throws IOException {
+		
+		UserDetailsModel user = (UserDetailsModel) request.getSession().getAttribute(Constants.USER_PRINCIPAL);
+		if(user==null){
+			LOGGER.error("Error description : "+fullDateFormat.format(new Date())+" : "	+"User session expired.");
+			throw new AccessDeniedException("User session expired.");
+		}
+		InputStream inputStream;
+		try {
+			String fileName = name.replaceAll("%3A", ":").replaceAll("%2F", "/").replaceAll("%2C", ",")
+					.replaceAll("\\+", " ").replaceAll("%20", " ").replaceAll("%26", "&").replaceAll("%5C", "/");
+			inputStream = new FileInputStream(fileName);
+			String headerKey = "Content-Disposition";
+			String headerValue = String.format("attachment; filename=\"%s\"", new java.io.File(fileName).getName());
+			response.setHeader(headerKey, headerValue);
+			response.setContentType("pdf");
+			ServletOutputStream outputStream = response.getOutputStream();
+			FileCopyUtils.copy(inputStream, outputStream);
+			outputStream.close();
+			new File(fileName).delete();
+			LOGGER.info(user.getUserName()+ " : "+fullDateFormat.format(new Date())+" : " +fileName.split("/")[fileName.split("/").length-1]+" : file download success");
+		} catch (IOException e) {
+			LOGGER.error("Error description : "+fullDateFormat.format(new Date())+" : "+user.getUserName()+"File not available : "+e);
+		}
+	}
+
+}

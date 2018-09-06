@@ -1,0 +1,19 @@
+package org.sdrc.devinfo.repository;
+
+import java.util.List;
+
+import org.sdrc.devinfo.domain.MBIndicatorRecommendation;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * 
+ *
+ * @author Ratikanta Pradhan (ratikanta@sdrc.co.in) on 19-Dec-2016 12:10:48 pm
+ */
+public interface MBIndicatorRecommendationRepository {
+
+	List<MBIndicatorRecommendation> findAll();
+	
+	@Transactional
+	void save(MBIndicatorRecommendation data);
+}

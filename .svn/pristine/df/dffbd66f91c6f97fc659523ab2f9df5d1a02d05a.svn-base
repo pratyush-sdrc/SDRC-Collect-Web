@@ -1,0 +1,498 @@
+package org.sdrc.childinfo.service;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.sdrc.childinfo.domain.UUIdGenerator;
+import org.sdrc.childinfo.model.DataEntryModel;
+import org.sdrc.childinfo.model.DataModel;
+import org.sdrc.childinfo.model.IUSModel;
+import org.sdrc.childinfo.model.UserDetailsModel;
+import org.sdrc.childinfo.model.ValueObject;
+import org.sdrc.childinfo.repository.UUIdGeneratorRepository;
+import org.sdrc.childinfo.util.ChildInfoUtil;
+import org.sdrc.childinfo.util.Constants;
+import org.sdrc.childinfo.util.CustomErrorMessageModel;
+import org.sdrc.devinfo.domain.UtAreaEn;
+import org.sdrc.devinfo.domain.UtData;
+import org.sdrc.devinfo.domain.UtIndicatorClassificationsEn;
+import org.sdrc.devinfo.domain.UtTimeperiod;
+import org.sdrc.devinfo.repository.UtAreaEnRepository;
+import org.sdrc.devinfo.repository.UtDataRepository;
+import org.sdrc.devinfo.repository.UtIndicatorClassificationsEnRepository;
+import org.sdrc.devinfo.repository.UtIndicatorUnitSubgroupRepository;
+import org.sdrc.devinfo.repository.UtTimeperiodRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+/**
+ * This Service class will handle data entry upload, download through excel file 
+ * 
+ * @author subrata
+ *
+ */
+@Service
+@EnableScheduling
+public class DataEntryServiceImpl implements DataEntryService {
+	
+	/**
+	 * This Repository will helps to store data in Ut_Data table
+	 */
+	@Autowired
+	public UtDataRepository utDataRepository;
+	
+	@Autowired
+	private UtAreaEnRepository areaRepository;
+	
+	@Autowired
+	private UtIndicatorClassificationsEnRepository utIndicatorClassificationsEnRepository;
+	
+	@Autowired
+	private UtIndicatorUnitSubgroupRepository utIndicatorUnitSubgroupRepository;
+	
+	@Autowired
+	private ServletContext servletContext;
+	
+	@Autowired
+	private ResourceBundleMessageSource messageSource;
+	
+	@Autowired
+	private UtTimeperiodRepository utTimeperiodRepository;
+	
+	@Autowired
+	private UUIdGeneratorRepository uuIdGeneratorRepository;
+	
+	private SimpleDateFormat timestampFormat = new SimpleDateFormat("ddMMyyyyHHmmssSSSSS");
+
+	private SimpleDateFormat simpleDateformat = new SimpleDateFormat("yyyy.MM");
+	
+	private SimpleDateFormat simpleDateformater = new SimpleDateFormat("yyyy-MM-dd");
+
+	private DateFormat formatter  = new SimpleDateFormat("yyyy-MM-dd");
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger("LOGGER");
+	
+	/**
+	 * Saving the excel data in ut_data table 
+	 */
+	@Override
+	@Transactional
+	public CustomErrorMessageModel excelFileUpload(byte[] bytes) {
+		CustomErrorMessageModel messageModel = new CustomErrorMessageModel();
+		InputStream fileInStream;
+		try {
+			/**
+			 * Getting all the area list
+			 */
+			List<UtAreaEn> areaList = areaRepository.findAll();
+			
+			Map<String, Integer> areaMap = new HashMap<>();
+			/**
+			 * Storing areaCode and areaName in a map
+			 */
+			areaList.forEach(area->areaMap.put(String.valueOf(area.getArea_ID()), area.getArea_NId()));
+			/**
+			 * This line will through FileNotFoundException when a file with the specified pathname does not exist
+			 */
+			fileInStream = new ByteArrayInputStream(bytes);
+			/**
+			 * This line will through IOException for failed or interrupted I/O operations
+			 */
+			XSSFWorkbook workbook = new XSSFWorkbook(fileInStream);
+			
+			List<UUIdGenerator> uuids = uuIdGeneratorRepository.findAll();
+			List<String> allUUids = new ArrayList<>(); 
+			uuids.forEach(value->allUUids.add(value.getUuid()));
+			
+			/**
+			 * Checking UUID of the uploaded template
+			 */
+			XSSFSheet mainSheet = workbook.getSheet("Main");
+			if(mainSheet == null){
+				LOGGER.error("Wrong Excel file.");
+				workbook.close();
+				throw new RuntimeException("Wrong excel");
+			}
+				
+			XSSFRow row =  mainSheet.getRow(1);
+			if(row == null){
+				LOGGER.error("Wrong Excel file.");
+				workbook.close();
+				throw new RuntimeException("Wrong excel");
+			}
+			XSSFCell cell = row.getCell(6);
+			if(!allUUids.contains(cell.getStringCellValue())){
+				LOGGER.error("Wrong Excel file.");
+				workbook.close();
+				throw new RuntimeException("Wrong excel");
+			}
+			/**
+			 * Getting all the Sheets from workbook and iterating the sheets 
+			 */
+			for(int i = 0; i< workbook.getNumberOfSheets();i++){
+				if(workbook.getSheetIndex(workbook.getSheetAt(i))!=0 && workbook.getSheetIndex(workbook.getSheetAt(i))!=1){
+					XSSFSheet sheet = workbook.getSheetAt(i);
+					saveExcelData(sheet, areaMap);
+				}
+			}
+			workbook.close();
+			fileInStream.close();
+			LOGGER.info("File data saved successfully.");
+			messageModel.setMessage("Success");
+			messageModel.setStatusCode(HttpServletResponse.SC_OK);
+		} catch (FileNotFoundException e) {
+			LOGGER.error("File not found.");
+			messageModel.setMessage("Fail");
+			messageModel.setStatusCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		} catch (IOException e) {
+			LOGGER.error("Failed or interrupted I/O operations");
+			messageModel.setMessage("Fail");
+			messageModel.setStatusCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		return messageModel;
+	}
+	/**
+	 * Saving all sheets data in Ut_Data table.
+	 * 
+	 * @param sheet
+	 */
+	private void saveExcelData(XSSFSheet sheet, Map<String, Integer> areaMap) {
+		List<UtData> utDatas = new ArrayList<>();
+		XSSFRow row= sheet.getRow(3);
+		XSSFCell cell = row.getCell(4);
+		int subSector = ((Double)cell.getNumericCellValue()).intValue();
+		
+		row= sheet.getRow(4);
+		cell = row.getCell(4);
+		int indicator = ((Double)cell.getNumericCellValue()).intValue();
+		
+		row= sheet.getRow(5);
+		cell = row.getCell(4);
+		int unit = ((Double)cell.getNumericCellValue()).intValue();
+		
+		row= sheet.getRow(6);
+		cell = row.getCell(4);
+		int subgroup = ((Double)cell.getNumericCellValue()).intValue();
+		
+		row= sheet.getRow(7);
+		cell = row.getCell(4);
+		int timePeriod = ((Double)cell.getNumericCellValue()).intValue();
+		
+		row= sheet.getRow(8);
+		cell = row.getCell(1);
+		String providedBy = cell.getStringCellValue();
+		
+		/**
+		 * Checking if the user already uploaded the data
+		 */
+		List<UtData> datas = utDataRepository.getData(subSector, timePeriod, indicator, unit, subgroup);
+		for (int i = 12; i <= sheet.getLastRowNum(); i++){
+			row = sheet.getRow(i);
+			cell = row.getCell(0);
+			UtData data = checkData(datas, areaMap.get(cell.getStringCellValue()));
+			if(data==null){
+				UtData utData = new UtData();
+				utData.setArea_NId(areaMap.get(cell.getStringCellValue()));
+				cell = row.getCell(3);
+				utData.setData_Value(cell.getNumericCellValue());
+				utData.setIUSNId(subSector);
+				utData.setTimePeriod_NId(timePeriod);
+				utData.setIndicator_NId(indicator);
+				utData.setUnit_NId(unit);
+				utData.setSubgroup_Val_NId(subgroup);
+				utData.setIUNId(subgroup+"_"+unit);
+
+				utDatas.add(utData);
+			}else{
+				cell = row.getCell(3);
+				data.setData_Value(cell.getNumericCellValue());
+
+				utDatas.add(data);
+			}
+		}
+		utDataRepository.save(utDatas);
+	}
+	
+	private UtData checkData(List<UtData> datas, Integer areaId) {
+		UtData data=null;
+		for (UtData utData : datas) {
+			if(utData.getArea_NId()==areaId)
+				data = utData;
+		}
+		
+		return data;
+	}
+	/**
+	 * Downloading the excel file
+	 */
+	@Override
+	public String downloadExcelFile(DataEntryModel dataEntryModel) {
+		
+		XSSFWorkbook workbook;
+		FileInputStream fileInputStream;
+		String path = messageSource.getMessage("childinfo.output.path", null, null);
+		File file = new File(path);
+		if(!file.exists()){
+			file.mkdirs();
+		}
+		String outputPath = path +"CI_DATA_MGMT_MODULE_FRS_"+ timestampFormat.format(new Date())+ ".xlsx";
+		FileOutputStream fileOutputStream;
+		try {
+			HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+			UserDetailsModel user = (UserDetailsModel) request.getSession().getAttribute(Constants.USER_PRINCIPAL);
+			fileInputStream = new FileInputStream(new File(servletContext.getRealPath(messageSource.getMessage("excel.template", null, null))));
+			workbook = new XSSFWorkbook(fileInputStream);
+			
+			int rowNum;
+			XSSFSheet sheet;
+			XSSFRow row;
+			XSSFCell cell;
+			
+			// Getting style sheet for unlocking
+			XSSFCellStyle styleForUnLocking = ChildInfoUtil.getStyleForUnLocking(workbook);
+			
+			int colUnlock = 3;
+			int rowUnlock =12;
+			for (IUSModel iusModel : dataEntryModel.getIusModel()) {
+				rowNum = 2;
+				sheet = workbook.cloneSheet(1);
+				workbook.setSheetName(workbook.getSheetIndex(sheet), iusModel.getIndicatorName()+"("+iusModel.getUnitName()+")");
+				
+				Map<String, Integer> dataValueMap = new LinkedHashMap<>();
+				dataValueMap.put(dataEntryModel.getProgram().getDescription(), dataEntryModel.getProgram().getNid());
+				dataValueMap.put(iusModel.getIndicatorName(), iusModel.getIndicatorId());
+				dataValueMap.put(iusModel.getUnitName(), iusModel.getUnitId());
+				dataValueMap.put(iusModel.getSubgroupName(), iusModel.getSubgroupId());
+				dataValueMap.put(dataEntryModel.getTimePeriod().getDescription(), dataEntryModel.getTimePeriod().getNid());
+				dataValueMap.put(null, null);
+				dataValueMap.put(user.getUserName(), null);
+				
+				setAllValues(rowNum, sheet, dataValueMap);
+				
+				putAllArea(sheet, dataEntryModel);
+				
+				ChildInfoUtil.sheetLock(sheet);
+				
+				row = sheet.getRow(8);
+				cell = row.createCell(1);
+				cell.setCellType(CellType.STRING);
+				cell.setCellStyle(styleForUnLocking);
+				cell = row.createCell(2);
+				cell.setCellStyle(styleForUnLocking);
+				cell = row.createCell(3);
+				cell.setCellStyle(styleForUnLocking);
+				
+				for(int i=0; i<dataEntryModel.getDataModel().size();i++){
+					
+					row = sheet.getRow(rowUnlock);
+					cell = row.createCell(colUnlock);
+					cell.setCellStyle(styleForUnLocking);
+					rowUnlock++;
+					
+				}
+				sheet.setColumnHidden(4,true);
+				rowUnlock =12;
+				colUnlock = 3;
+			}
+			sheet = workbook.getSheetAt(1);
+			row = sheet.createRow(1);
+			cell = row.createCell(6);
+
+			String uuid = getUUId();
+			cell.setCellValue(uuid);
+			
+			workbook.setSheetHidden(1, true);
+			workbook.lockStructure();
+			fileOutputStream = new FileOutputStream(new File(outputPath));
+			
+			workbook.write(fileOutputStream);
+			fileInputStream.close();
+			fileOutputStream.flush();
+			fileOutputStream.close();
+			
+		} catch (FileNotFoundException e) {
+			LOGGER.error("File not found while downloading excel file"+e);
+		} catch (IOException e) {
+			LOGGER.error("Failed or interrupted I/O operations"+e);
+		} 
+		return outputPath;
+	}
+
+	private String getUUId() {
+		String uuid = UUID.randomUUID().toString();
+		UUIdGenerator uuidGenerator = new UUIdGenerator();
+		uuidGenerator.setCreatedDate(new Timestamp(new Date().getTime()));
+		uuidGenerator.setUuid(uuid);
+		uuidGenerator.setIsLive(true);
+		uuIdGeneratorRepository.save(uuidGenerator);
+		return uuid;
+	}
+	@Override
+	public List<DataModel> getArea() {
+		List<UtAreaEn> areaList = areaRepository.findByAreaShortName("Block");
+		
+		List<DataModel> dataModelList = new ArrayList<>();
+		for (UtAreaEn utAreaEn : areaList) {
+			DataModel dataModel = new DataModel();
+			dataModel.setAreaCode(utAreaEn.getArea_ID());
+			dataModel.setLevel(utAreaEn.getArea_Level()==1?"State":utAreaEn.getArea_Level()==2?"Division":utAreaEn.getArea_Level()==3?"District":"Block");
+			dataModel.setArealevel(utAreaEn.getArea_Level());
+			dataModel.setAreaName(utAreaEn.getArea_Name());
+			dataModel.setAreaParentNId(utAreaEn.getArea_Parent_NId());
+			dataModel.setIsVisible(false);
+			dataModel.setIsSelected(false);
+			dataModel.setAreaCode(utAreaEn.getArea_ID());
+			dataModel.setAreaNId(utAreaEn.getArea_NId());
+			dataModelList.add(dataModel);
+		}
+		return dataModelList;
+	}
+	
+	private void setAllValues(int rowNum, XSSFSheet sheet, Map<String, Integer> dataValueMap) {
+		int rowNumber = rowNum;
+		XSSFRow row;
+		XSSFCell cell;
+		for (Map.Entry<String, Integer> obj : dataValueMap.entrySet()) {
+	        rowNumber += 1;
+			int colNum = 1;
+			row = sheet.getRow(rowNumber);
+			cell = row.createCell(colNum);
+			cell.setCellValue(obj.getKey());
+			colNum = colNum + 3;
+			cell = row.createCell(colNum);
+			if(obj.getValue() != null)
+				cell.setCellValue(obj.getValue());
+	    }
+		
+	}
+	/**
+	 * Saving the data values in the excel sheet
+	 * @param sheet
+	 * @param dataEntryModel
+	 * 
+	 */
+	private void putAllArea(XSSFSheet sheet, DataEntryModel dataEntryModel) {
+		int rowNum = 12;
+		int colNum = 0;
+		for(DataModel datamodel : dataEntryModel.getDataModel()){
+			XSSFRow row = sheet.createRow(rowNum);
+			XSSFCell cell = row.createCell(colNum);
+			cell.setCellValue(datamodel.getAreaCode());
+			colNum++;
+			cell = row.createCell(colNum);
+			cell.setCellValue(datamodel.getLevel());
+			colNum++;
+			cell = row.createCell(colNum);
+			cell.setCellValue(datamodel.getAreaName());
+			rowNum++;
+			colNum = 0;
+		}
+	}
+	@Override
+	public List<ValueObject> getSubsector() {
+        List<UtIndicatorClassificationsEn> utIndicatorClassifications = utIndicatorClassificationsEnRepository.getSubsector();
+        List<ValueObject> valueObject = new ArrayList<>();
+        for (UtIndicatorClassificationsEn utIndicatorClassificationsEn : utIndicatorClassifications) {
+        	ValueObject object = new ValueObject();
+        	object.setNid(utIndicatorClassificationsEn.getIC_NId());
+        	object.setDescription(utIndicatorClassificationsEn.getIC_Name());
+        	valueObject.add(object);
+		}
+        return valueObject;
+	}
+	@Override
+	public List<IUSModel> getIUS(int id) {
+		List<Object[]> utIndicatorUnitSubgroups = utIndicatorUnitSubgroupRepository.getIUS(id);
+		List<IUSModel> iusModel = new ArrayList<>();
+        for (Object[] utIndicatorUnitSubgroup : utIndicatorUnitSubgroups) {
+        	IUSModel object = new IUSModel();
+        	object.setIusNId(Integer.parseInt(utIndicatorUnitSubgroup[0].toString()));
+        	object.setIusName(utIndicatorUnitSubgroup[2].toString()+","+utIndicatorUnitSubgroup[6].toString()+"("+ utIndicatorUnitSubgroup[4].toString()+")");
+        	object.setIndicatorId(Integer.parseInt(utIndicatorUnitSubgroup[1].toString()));
+        	object.setIndicatorName(utIndicatorUnitSubgroup[2].toString());
+        	object.setUnitId(Integer.parseInt(utIndicatorUnitSubgroup[3].toString()));
+        	object.setUnitName(utIndicatorUnitSubgroup[4].toString());
+        	object.setSubgroupId(Integer.parseInt(utIndicatorUnitSubgroup[5].toString()));
+        	object.setSubgroupName(utIndicatorUnitSubgroup[6].toString());
+        	iusModel.add(object);
+		}
+		return iusModel;
+	}
+	
+	@Override
+	@Scheduled(cron="0 0 0 1 1/1 ?")
+	public void createPreviousMonth() {
+		try {
+			Calendar startDateCalendar = Calendar.getInstance();
+			startDateCalendar.add(Calendar.MONTH, -1);
+			startDateCalendar.set(Calendar.DATE, 1);
+			Date sDate = startDateCalendar.getTime();
+			String startDateStr = simpleDateformater.format(sDate);
+			Date startDate = (Date) formatter.parse(startDateStr + " 00:00:00.000");
+			startDateCalendar.set(Calendar.DATE, startDateCalendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+			Date eDate = startDateCalendar.getTime();
+			String endDateStr = simpleDateformater.format(eDate);
+			Date endDate = (Date) formatter.parse(endDateStr + " 00:00:00.000");
+			UtTimeperiod utTime = utTimeperiodRepository.findByStartDateAndEndDateAndPeriodicity(startDate, endDate,"1");
+
+			if (utTime == null) {
+				UtTimeperiod utTimePeriod = new UtTimeperiod();
+				utTimePeriod.setStartDate(startDate);
+				utTimePeriod.setEndDate(endDate);
+				utTimePeriod.setPeriodicity("1"); //for monthly aggregation periodicity is 1
+				utTimePeriod.setTimePeriod(simpleDateformat.format(startDate));
+				utTimeperiodRepository.save(utTimePeriod);
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error while converting String to Date format."+e);
+		}
+			
+	}
+	@Override
+	public List<ValueObject> getTimePeriod() {
+		List<UtTimeperiod> utTime = utTimeperiodRepository.findByPeriodicity("1");
+		List<ValueObject> valueObject = new ArrayList<>();
+		for (UtTimeperiod utTimeperiod : utTime) {
+			ValueObject object =new ValueObject();
+			object.setNid(utTimeperiod.getTimePeriod_NId());
+			object.setDescription(utTimeperiod.getTimePeriod());
+			valueObject.add(object);
+		}
+		return valueObject;
+	}
+
+}
+ 

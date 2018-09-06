@@ -1,0 +1,304 @@
+
+//@author Sourav Keshari Nath
+
+var app = angular.module("templateGenerationApp", [ 'ui.bootstrap', 'ngMaterial',
+		'ngMessages' ]);
+
+app.controller('TemplateGenerationController', function($scope, $http, $timeout,$filter,templateGenerationService) {
+		$scope.allTimeperiodList = [];
+		$scope.subSectors = [];
+		$scope.allAreaList = [];
+		$scope.allSubsectorList = [];
+		$scope.areas = [];
+		$scope.themes = [];
+		$scope.errorMessage = "";
+		
+		$scope.selectedTimeperiod = {};
+		$scope.selectedSubsector = {};
+		$scope.selectedIUS = "";
+		$scope.selectedAreaLevel = "";
+		$scope.selectedArea = "";
+		
+        $scope.arealevel = [
+        	{level:1,areaName:"State",isSelected:false},
+        	{level:2,areaName:"Division",isSelected:false},
+        	{level:3,areaName:"District",isSelected:false},
+        	{level:4,areaName:"Block",isSelected:false}
+        ]
+        $scope.getTimeperiodList = function(id){
+        	var url = "getTimePeriod";
+		       templateGenerationService.getTimePeriodList(url).then(
+	            function(data) {
+	            	$scope.allTimePeriodList = data;
+				});
+        }
+        $scope.getTimeperiodList();
+        $scope.getIUSList = function(id){
+        	var url = "getIUS?id="+id;
+		       templateGenerationService.getIUSList(url).then(
+	            function(data) {
+	            	$scope.allIUSList = data;
+	            	$scope.allIUSList.push({indicatorId:0,
+	            	indicatorName:"",
+	            	iusNId:0,
+	            	iusName:"All Select",
+	            	selected:false,
+	            	subgroupId:0,
+	            	subgroupName:"",
+	            	unitId:2,
+	            	unitName:""})
+				});
+        }
+        $scope.getSubsectorList = function(){
+        	var url = "getSubsector";
+		       templateGenerationService.getSubsectorList(url).then(
+	            function(data) {
+	            	$scope.allSubsectorList = data;
+				});
+        }
+        $scope.getSubsectorList();
+        function convert(array){ 
+        	var map = {};
+        	for(var i = 0; i < array.length; i++){
+        		var obj = array[i];
+        		obj.items= [];
+        		map[obj.areaNId] = obj;
+        		var parent = obj.areaParentNId || '-'; 
+        		if(!map[parent]){
+        			map[parent] = {
+        				items: [] 
+        		};
+        		}
+        		map[parent].items.push(obj);
+        		} 
+        	return map["2397"]; 
+        	}
+        $scope.getAreaList = function(){
+        	var url = "getArea";
+		       templateGenerationService.getAreaList(url).then(
+	            function( data ) {
+	            	$scope.allAreaList = data;
+	            	$scope.allAreaList = convert($scope.allAreaList)
+				});
+        }
+        $scope.getAreaList();
+        
+        $scope.selectTimeperiod = function(timeperiod){
+        	$scope.selectedTimeperiod = timeperiod;
+        }
+        $scope.selectSubsectors = function(subsector){
+        	$scope.selectedSubsector = subsector;
+        	$scope.getIUSList(subsector.nid);
+        }
+        $scope.selectIUS = function(ius){
+    		$scope.selectedIUSList = $filter('filter')($scope.allIUSList, {
+    			selected : true
+    		}, true);
+    		$scope.titleforIUS = "";
+    		if($scope.selectedIUSList.length > 0){
+        		angular.forEach($scope.selectedIUSList, function(value, key) {
+        			$scope.titleforIUS = $scope.titleforIUS+"\n"+value.iusName;
+        		});
+    			$scope.selectedIUS = " Selected IUS - Count "+$scope.selectedIUSList.length;
+    		}else{
+    			$scope.selectedIUS = "";
+    		}
+        	
+        }
+        $scope.selectAreaLevel = function(arealevel){
+        	$scope.selectedAreaLevel = $filter('filter')($scope.arealevel, {
+    			isSelected : true
+    		}, true);
+        	$scope.titleforArea = "";
+        	if($scope.selectedAreaLevel.length > 0){
+        		angular.forEach($scope.selectedAreaLevel, function(value, key) {
+        			$scope.titleforArea = $scope.titleforArea+"\n"+value.areaName;
+        		});
+    			$scope.selectedAreaLevel = " Selected AreaLevel - Count "+$scope.selectedAreaLevel.length;
+    		}else{
+    			$scope.selectedAreaLevel = "";
+    		}
+        	$scope.allAreaList.isVisible = true;
+        }
+        var count=0;
+        $scope.areaCout =[];
+        $scope.selectArea = function(area){
+      	
+            if(area.arealevel == 1 && $scope.arealevel[1].isSelected == true){
+        		for (var i=0; i<$scope.allAreaList.items.length; i++) 
+            	{
+        			if($scope.allAreaList.isSelected == true){
+            	        $scope.allAreaList.items[i].isVisible = true;
+        			}else{
+        				$scope.allAreaList.items[i].isVisible = false;
+        				$scope.allAreaList.items[i].isSelected = false;
+        			}
+            	}
+        	}else if(area.arealevel == 2 && $scope.arealevel[2].isSelected == true){
+        		for (var i=0; i<$scope.allAreaList.items.length; i++) 
+            	{
+        			for (var j=0; j<$scope.allAreaList.items[i].items.length; j++) 
+                	{
+        				if($scope.allAreaList.items[i].isSelected == true){
+        					$scope.allAreaList.items[i].items[j].isVisible = true;
+        				}else{
+            				$scope.allAreaList.items[i].items[j].isVisible = false;
+            				$scope.allAreaList.items[i].items[j].isSelected = false;
+            			}
+                	}
+            	}
+        	}else if(area.arealevel == 3 && $scope.arealevel[3].isSelected == true){
+        		for (var i=0; i<$scope.allAreaList.items.length; i++) 
+            	{
+        			for (var j=0; j<$scope.allAreaList.items[i].items.length; j++) 
+                	{
+        				if($scope.allAreaList.items[i].isSelected == true){
+	        				for (var k=0; k<$scope.allAreaList.items[i].items[j].items.length; k++) 
+	                    	{
+	        					if($scope.allAreaList.items[i].items[j].isSelected == true){
+			            		    $scope.allAreaList.items[i].items[j].items[k].isVisible = true;
+	        					}else{
+	                				$scope.allAreaList.items[i].items[j].items[k].isVisible = false;
+	                				$scope.allAreaList.items[i].items[j].items[k].isSelected = false;
+	                			}
+	                    	}
+        				}
+                	}
+            	}
+        	}
+            $scope.selectedArea = " Selected Area - Count "+count;
+        }
+        $scope.download = function(){
+    		$scope.selectedIUSList = $filter('filter')($scope.allIUSList, {
+    			selected : true
+    		}, true);
+    		$scope.arealists = [];
+    		$scope.arealists.push({areaCode:$scope.allAreaList.areaCode,
+				areaNId:$scope.allAreaList.areaNId,
+				areaName:$scope.allAreaList.areaName,
+				arealevel:$scope.allAreaList.arealevel,
+				level:$scope.allAreaList.level});
+    		for (var i=0; i<$scope.allAreaList.items.length; i++) 
+        	{
+    			if($scope.allAreaList.items[i].isSelected == true){
+    			$scope.arealists.push({areaCode:$scope.allAreaList.items[i].areaCode,
+    				areaNId:$scope.allAreaList.items[i].areaNId,
+    				areaName:$scope.allAreaList.items[i].areaName,
+    				arealevel:$scope.allAreaList.items[i].arealevel,
+    				level:$scope.allAreaList.items[i].level});
+    			for (var j=0; j<$scope.allAreaList.items[i].items.length; j++) 
+            	{
+    				if($scope.allAreaList.items[i].items[j].isSelected == true){
+    		  			$scope.arealists.push({areaCode:$scope.allAreaList.items[i].items[j].areaCode,
+    	    				areaNId:$scope.allAreaList.items[i].items[j].areaNId,
+    	    				areaName:$scope.allAreaList.items[i].items[j].areaName,
+    	    				arealevel:$scope.allAreaList.items[i].items[j].arealevel,
+    	    				level:$scope.allAreaList.items[i].items[j].level});
+        				for (var k=0; k<$scope.allAreaList.items[i].items[j].items.length; k++) 
+                    	{
+        					if($scope.allAreaList.items[i].items[j].items[k].isSelected == true){
+            		  			$scope.arealists.push({areaCode:$scope.allAreaList.items[i].items[j].items[k].areaCode,
+            	    				areaNId:$scope.allAreaList.items[i].items[j].items[k].areaNId,
+            	    				areaName:$scope.allAreaList.items[i].items[j].items[k].areaName,
+            	    				arealevel:$scope.allAreaList.items[i].items[j].items[k].arealevel,
+            	    				level:$scope.allAreaList.items[i].items[j].items[k].level});
+        					}
+                    	}
+    				}
+            	}
+    		  }
+        	}
+    		
+        	if( $scope.selectedIUSList != undefined && $scope.selectedIUSList.length >0 && 
+        			$scope.selectedSubsector != undefined && 
+        			$scope.selectedTimeperiod != undefined &&
+        			$scope.arealists.length > 0){
+        		
+        		$scope.filteredIUSList = JSON.parse(angular.toJson($scope.selectedIUSList)); //;
+        		$scope.filteredSubsectorList = JSON.parse(angular.toJson($scope.selectedSubsector));
+        		$scope.filteredTimeperiod = JSON.parse(angular.toJson($scope.selectedTimeperiod));
+            	$scope.model={
+            			timePeriod:$scope.filteredTimeperiod,
+            			program:$scope.filteredSubsectorList,
+            			iusModel:$scope.filteredIUSList,
+            			dataModel:$scope.arealists
+            	}
+        		
+    		   var url = "downloadExcelFile";
+		       templateGenerationService.downloadTemplate(url,$scope.model).then(
+	            function( result ){
+	            	var data = {"fileName" :result.key};
+					download("downloadSheet",data,'POST');
+				});
+        	}else{
+        		alert("Please select all")
+        	}
+        
+        }
+});
+app.service("templateGenerationService",  function( $http, $q ) {
+    return({
+    	getTimePeriodList:getTimePeriodList,
+    	getAreaList:getAreaList,
+    	getSubsectorList:getSubsectorList,
+    	getIUSList:getIUSList,
+    	downloadTemplate:downloadTemplate
+    });
+    function getTimePeriodList(urls) {
+        var request = $http({
+            method: "get",
+            url: urls,
+        });
+        return( request.then( handleSuccess, handleError ) );
+    }
+    function getIUSList(urls) {
+        var request = $http({
+            method: "get",
+            url: urls,
+        });
+        return( request.then( handleSuccess, handleError ) );
+    }
+    function getAreaList(urls) {
+        var request = $http({
+            method: "get",
+            url: urls,
+        });
+        return( request.then( handleSuccess, handleError ) );
+    }
+    function getSubsectorList(urls) {
+        var request = $http({
+            method: "get",
+            url: urls,
+        });
+        return( request.then( handleSuccess, handleError ) );
+    }
+    function downloadTemplate(urls,model) {
+        var request = $http({
+            method: "post",
+            url: urls,
+            data:JSON.stringify(model),
+        });
+        return( request.then( handleSuccess, handleError ) );
+    }
+    // I transform the error response, unwrapping the application dta from
+    function handleError( response ) {
+        // The API response from the server should be returned in a
+        // nomralized format. However, if the request was not handled by the
+        // server (or what not handles properly - ex. server error), then we
+        // may have to normalize it on our end, as best we can.
+        if (
+            ! angular.isObject( response.data ) ||
+            ! response.data.message
+            ) {
+            return( $q.reject( "An unknown error occurred." ) );
+        }
+        // Otherwise, use expected error message.
+        return( $q.reject( response.data.message ) );
+    }
+    // I transform the successful response, unwrapping the application data
+    // from the API response payload.
+    function handleSuccess( response ) {
+        return( response.data );
+    }
+}
+);

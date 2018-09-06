@@ -1,0 +1,77 @@
+# Properties file with JDBC and JPA settings.
+jpa.showSql=false
+
+##SQL_SERVER Settings for application 
+jdbc.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+jdbc.url=jdbc:sqlserver://192.168.1.5:1433
+#jdbc.url=jdbc:sqlserver://192.168.1.65:1433
+jdbc.databaseName=up_childinfo1
+jdbc.username=sa
+jdbc.password=P@Ss@123
+#jdbc.password=sdrc@dev1
+
+#SQL_SERVER Settings for devinfo
+jdbc.devinfo.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+jdbc.devinfo.url=jdbc:sqlserver://192.168.1.5:1433
+#jdbc.devinfo.url=jdbc:sqlserver://192.168.1.65:1433
+jdbc.devinfo.databaseName=up_childinfo1
+jdbc.devinfo.username=sa
+jdbc.devinfo.password=P@Ss@123
+#jdbc.devinfo.password=sdrc@dev1
+
+
+
+
+# Property that determines which Hibernate dialect to use
+# (only applied with "applicationContext-hibernate.xml")
+hibernate.dialect=org.hibernate.dialect.SQLServerDialect
+hibernate.hbm2ddl.auto=update
+hibernate.show_sql=false
+
+# Property that determines which database to use with an AbstractJpaVendorAdapter
+jpa.database=SQL_SERVER
+
+#For production server(evm) .
+key=932597525288-4p8jmpk0jq7vqltmnom418uq8lf14u5b.apps.googleusercontent.com
+secret=o3LYUCZnTECv7FFlXDWTxVA3
+callbackUrl=http://evmindia.org.in/j_spring_oauth_security_check
+
+# Properties for google custom search
+#local
+#gcs_key=014594608856377017848:xqt7jjxwlp0
+#production (evm)
+gcs_key=008774404049432536330:uye-ef2vtje
+
+#Google reCaptcha private key .
+#for Local
+#captcha.private.key=6LdEmfcSAAAAAI4o3jXRsun428TVYUzvPR7v3CRN
+#captcha.public.key=6LdEmfcSAAAAAA7P8RWAGg_fIUt-Nkz3FQJoiTjs
+#for Production server (evm)
+captcha.private.key=6LcaIfoSAAAAAN2rOFF4dJAr2EWzMpLQhVupjH6a 
+captcha.public.key=6LcaIfoSAAAAAKePR_mD-ejhkUeOoVR9_ucyfc7K
+
+
+
+#AGGREGATE DETAILS
+#odk.aggregate.server= http://203.129.205.39:8080/EVMBIHAR
+odk.aggregate.server= http://192.168.1.21:8080/EVMBIHAR
+#odk.aggregate.username=admin
+odk.aggregate.username=superadmin
+#odk.aggregate.password=sdrc@rsbb780#
+odk.aggregate.password=evm@bihar30#
+
+odk.enketo.api.token=qpb0bpqlkfpc766r
+
+
+#root_url = http://192.168.1.120:8088/up-childinfo
+#root_url = http://evmindia.org.in
+
+#devinfo offline adaptation file path 
+biharinfo.offline.adaptation.path = D:/sarita_workspace/BiharInfo/BiharInfo 1.0.zip
+#exported svg  path
+biharinfo.svgimage.path = D:/map.svg
+
+#exported svg  path
+jpgimage.path = D:
+
+output.path=C://AssamInfo
